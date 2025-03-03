@@ -21,5 +21,5 @@ pip install -r requirements.txt
 ````
 3. Run the Streamlit UI:
 ```sh
-streamlit run streamlit_app.py
+streamlit run growling-cat.py
  ```
