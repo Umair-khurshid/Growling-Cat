@@ -9,18 +9,17 @@ Growling Cat is a open-source SEO crawler designed as a cross-platform alternati
 - **Broken Link Detection**: Identifies broken internal links.  
 - **Customizable Settings**: Control concurrency, download delays, and rendering options.  
 
-## 📦 Installation  
+## Installation  
 1. Clone the repository:  
-   ```sh
+```sh
    git clone https://github.com/yourusername/growling-cat.git
    cd growling-cat
    ```
-2. Install dependencies:
+3. Install dependencies:
   ```sh
 pip install -r requirements.txt
-  ```
+````
 3. Run the Streamlit UI:
-
-   ```sh
+```sh
 streamlit run streamlit_app.py
-   ```
+ ```
