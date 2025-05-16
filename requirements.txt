@@ -1,0 +1,8 @@
+streamlit
+scrapy
+pandas
+selenium
+lxml
+tqdm
+requests
+
