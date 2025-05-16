@@ -1,4 +1,4 @@
-# Growling Cat - SEO Crawler  
+# Growling Cat - SEO Crawler  🐈‍⬛
 
 Growling Cat is a open-source SEO crawler designed as a cross-platform alternative to Screaming Frog. It efficiently scrapes and analyzes web pages, providing valuable insights into SEO elements, internal linking, and broken links.  
 
@@ -10,16 +10,18 @@ Growling Cat is a open-source SEO crawler designed as a cross-platform alternati
 - **Customizable Settings**: Control concurrency, download delays, and rendering options.  
 
 ## Installation  
-1. Clone the repository:  
+**1. Clone the repository**:  
 ```sh
    git clone git@github.com:Umair-khurshid/Growling-Cat.git
    cd Growling-Cat
    ```
-3. Install dependencies:
+**2. Install dependencies**:
   ```sh
 pip install -r requirements.txt
 ````
-3. Run the Streamlit UI:
+**3. Run the Streamlit UI**:
 ```sh
 streamlit run growling-cat.py
  ```
+*You can also use the demo at: [Growling Cat](https://growlingcat.streamlit.app/)*
+
