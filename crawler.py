@@ -49,6 +49,11 @@ class SEOCrawler(scrapy.Spider):
 
     def parse(self, response):
         try:
+            content_type = response.headers.get("Content-Type", b"").decode().lower()
+            if not ("text/html" in content_type or "application/xhtml+xml" in content_type):
+                logger.warning("Skipping non-HTML content: %s (Content-Type: %s)", response.url, content_type)
+                return
+
             if self.js_rendering:
                 self.driver.get(response.url)
                 html = self.driver.page_source
@@ -75,7 +80,7 @@ class SEOCrawler(scrapy.Spider):
                 "Canonical": canonical.strip() if canonical else "N/A",
                 "H1 Tags": "; ".join(h1_tags) if h1_tags else "N/A",
                 "H2 Tags": "; ".join(h2_tags) if h2_tags else "N/A",
-                "H3 Tags": "; ".join(h3_tags) if h2_tags else "N/A",
+                "H3 Tags": "; ".join(h3_tags) if h3_tags else "N/A",
                 "Image Alts": "; ".join(image_alts) if image_alts else "N/A",
                 "JSON-LD": "; ".join(json_ld_scripts) if json_ld_scripts else "N/A",
                 "Broken Links": "N/A",
