@@ -21,11 +21,12 @@ def fix_url_scheme(url: str) -> str:
 
 
 def start_crawl(cleaned_url, depth, delay, concurrency, js_rendering):
-    """
-    Launch the Scrapy crawl in a separate thread.
-    """
-    if os.path.exists("progress.json"):
-        os.remove("progress.json")
+    # List of files to delete before crawl
+    for f in ["progress.json", "output.csv"]:
+        if os.path.exists(f):
+            os.remove(f)
+
+    run_crawler(cleaned_url, depth, delay, concurrency, js_rendering)
 
     run_crawler(cleaned_url, depth, delay, concurrency, js_rendering)
 
