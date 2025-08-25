@@ -93,11 +93,13 @@ def main():
                 total_pages = len(df)
                 missing_titles = len(df[df['title'] == 'N/A'])
                 missing_descriptions = len(df[df['meta_description'] == 'N/A'])
+                pages_with_broken_links = len(df[df['broken_links'] != 'N/A'])
 
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Total Pages Crawled", total_pages)
                 col2.metric("Pages with Missing Titles", missing_titles)
                 col3.metric("Pages with Missing Descriptions", missing_descriptions)
+                col4.metric("Pages with Broken Links", pages_with_broken_links)
 
                 st.write("### Crawled Data:")
                 st.dataframe(df)
