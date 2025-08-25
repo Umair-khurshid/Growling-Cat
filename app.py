@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 def fix_url_scheme(url: str) -> str:
@@ -88,6 +89,11 @@ def main():
                 conn = sqlite3.connect(db_file)
                 df = pd.read_sql_query("SELECT * FROM pages", conn)
                 conn.close()
+
+                # --- Add Length Analysis ---
+                df['title_length'] = df['title'].apply(lambda x: len(x) if x != 'N/A' else 0)
+                df['meta_description_length'] = df['meta_description'].apply(lambda x: len(x) if x != 'N/A' else 0)
+                # -------------------------
 
                 st.write("### 📊 Dashboard")
                 total_pages = len(df)
