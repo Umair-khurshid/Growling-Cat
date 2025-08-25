@@ -11,3 +11,4 @@ class PageItem(scrapy.Item):
     image_alts = scrapy.Field()
     json_ld = scrapy.Field()
     broken_links = scrapy.Field()
+    status_code = scrapy.Field()
