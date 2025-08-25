@@ -62,6 +62,7 @@ class SEOCrawler(scrapy.Spider):
 
             item = PageItem()
             item['url'] = response.url
+            item['status_code'] = response.status
             item['title'] = sel.xpath("//title/text()").get(default="N/A").strip()
             item['meta_description'] = sel.xpath("//meta[@name='description']/@content").get(default="N/A").strip()
             item['canonical'] = sel.xpath("//link[@rel='canonical']/@href").get(default="N/A").strip()

@@ -16,6 +16,7 @@ class SqlitePipeline:
             self.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS pages (
                     url TEXT PRIMARY KEY,
+                    status_code INTEGER,
                     title TEXT,
                     meta_description TEXT,
                     canonical TEXT,
@@ -45,12 +46,13 @@ class SqlitePipeline:
             self.cursor.execute(
                 """
                 INSERT OR REPLACE INTO pages (
-                    url, title, meta_description, canonical, h1_tags, h2_tags,
+                    url, status_code, title, meta_description, canonical, h1_tags, h2_tags,
                     h3_tags, image_alts, json_ld, broken_links
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item.get('url'),
+                    item.get('status_code'),
                     item.get('title'),
                     item.get('meta_description'),
                     item.get('canonical'),
