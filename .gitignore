@@ -173,3 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Growling Cat specific files
+output.csv
+progress.json
+growling_cat.db
+growling_cat.db-journal
+*.log
+
