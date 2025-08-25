@@ -50,6 +50,41 @@ def start_crawl_process(cleaned_url, depth, delay, concurrency, js_rendering):
         error_message += f"Stderr:\n{e.stderr}"
         return False, error_message
 
+def style_dataframe(df):
+    """Applies conditional styling to the DataFrame for a heatmap effect."""
+    def style_status_code(code):
+        if 200 <= code < 300:
+            return 'background-color: #8FBC8F; color: black'  # Dark Sea Green
+        elif 300 <= code < 400:
+            return 'background-color: #F0E68C; color: black'  # Khaki
+        elif 400 <= code < 600:
+            return 'background-color: #CD5C5C; color: white'  # Indian Red
+        return ''
+
+    def style_length(length, optimal_min, optimal_max, warn_range):
+        if length == 0:
+            return 'background-color: #CD5C5C; color: white' # Red for missing
+        if optimal_min <= length <= optimal_max:
+            return 'background-color: #8FBC8F; color: black'  # Dark Sea Green
+        elif (optimal_min - warn_range <= length < optimal_min) or \
+             (optimal_max < length <= optimal_max + warn_range):
+            return 'background-color: #F0E68C; color: black'  # Khaki
+        return 'background-color: #CD5C5C; color: white' # Indian Red
+
+    # Apply styles
+    styler = df.style.map(style_status_code, subset=['status_code']) \
+                     .map(lambda x: style_length(x, 50, 60, 10), subset=['title_length']) \
+                     .map(lambda x: style_length(x, 120, 158, 20), subset=['meta_description_length'])
+
+    return styler
+
+def truncate_url(url, max_length=50):
+    """Truncate URL for display and show full URL on hover."""
+    if len(url) > max_length:
+        return f'<a href="{url}" title="{url}" target="_blank">{url[:max_length]}...</a>'
+    return url
+
+
 def main():
     """
     Streamlit web interface for controlling the Growling Cat SEO crawler.
@@ -91,8 +126,10 @@ def main():
                 conn.close()
 
                 # --- Add Length Analysis ---
-                df['title_length'] = df['title'].apply(lambda x: len(x) if x != 'N/A' else 0)
-                df['meta_description_length'] = df['meta_description'].apply(lambda x: len(x) if x != 'N/A' else 0)
+                if 'title' in df.columns:
+                    df['title_length'] = df['title'].apply(lambda x: len(x) if x != 'N/A' else 0)
+                if 'meta_description' in df.columns:
+                    df['meta_description_length'] = df['meta_description'].apply(lambda x: len(x) if x != 'N/A' else 0)
                 # -------------------------
 
                 st.write("### 📊 Dashboard")
@@ -108,7 +145,16 @@ def main():
                 col4.metric("Pages with Broken Links", pages_with_broken_links)
 
                 st.write("### Crawled Data:")
-                st.dataframe(df)
+
+                # Apply URL truncation for better display
+                df['url'] = df['url'].apply(truncate_url)
+
+                # Display styled dataframe if all columns are present
+                if all(col in df.columns for col in ['status_code', 'title_length', 'meta_description_length']):
+                    st.dataframe(style_dataframe(df))
+                else:
+                    st.dataframe(df)
+
             except Exception as e:
                 st.error(f"❌ An error occurred while loading results: {e}")
         else:
