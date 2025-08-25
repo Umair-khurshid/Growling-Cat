@@ -1,13 +1,10 @@
-import json
 import os
-import threading
-import time
+import sqlite3
+import subprocess
+import sys
 
 import pandas as pd
 import streamlit as st
-
-from main import run_crawler
-
 
 def fix_url_scheme(url: str) -> str:
     """
@@ -19,17 +16,38 @@ def fix_url_scheme(url: str) -> str:
         url = "https://" + url
     return url
 
+def start_crawl_process(cleaned_url, depth, delay, concurrency, js_rendering):
+    """
+    Launches the Scrapy crawler in a separate, isolated process.
+    """
+    db_file = "growling_cat.db"
+    # Delete old database file if it exists to ensure a fresh crawl
+    if os.path.exists(db_file):
+        os.remove(db_file)
+    if os.path.exists(f"{db_file}-journal"):
+        os.remove(f"{db_file}-journal")
 
-def start_crawl(cleaned_url, depth, delay, concurrency, js_rendering):
-    # List of files to delete before crawl
-    for f in ["progress.json", "output.csv"]:
-        if os.path.exists(f):
-            os.remove(f)
+    # Construct the command to run the dedicated crawl script
+    command = [
+        sys.executable, # Use the same python interpreter that's running streamlit
+        "run_crawl_process.py",
+        cleaned_url,
+        str(depth),
+        str(delay),
+        str(concurrency),
+        str(js_rendering),
+    ]
 
-    run_crawler(cleaned_url, depth, delay, concurrency, js_rendering)
-
-    run_crawler(cleaned_url, depth, delay, concurrency, js_rendering)
-
+    # Run the command as a subprocess
+    # This blocks until the crawl is complete, solving the reactor and signal issues
+    try:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+        return True, ""
+    except subprocess.CalledProcessError as e:
+        # If the crawl script exits with an error, capture and display it
+        error_message = f"Crawler process failed with exit code {e.returncode}.\n"
+        error_message += f"Stderr:\n{e.stderr}"
+        return False, error_message
 
 def main():
     """
@@ -38,7 +56,7 @@ def main():
     st.set_page_config(page_title="Growling Cat", layout="wide")
     st.title("🐈‍⬛ Growling Cat")
 
-    url = st.text_input("Website URL:", "")
+    url = st.text_input("Website URL:", "https://quotes.toscrape.com/") # Default example
 
     with st.expander("⚙️ Advanced Settings"):
         depth = st.slider("Crawl Depth (DEPTH_LIMIT):", 1, 5, 2)
@@ -46,64 +64,47 @@ def main():
         concurrency = st.slider("Concurrent Requests:", 1, 16, 8)
         js_rendering = st.checkbox("Enable JavaScript Rendering", False)
 
-    progress_bar = st.empty()
-    status_text = st.empty()
-
     if st.button("Start Crawling"):
         cleaned_url = fix_url_scheme(url.strip())
 
         if cleaned_url:
-            st.info(f"**Crawling {cleaned_url}... This may take a while.**")
-            progress_bar.progress(0)
-            status_text.text("Crawling started...")
+            with st.spinner(f"**Crawling {cleaned_url}... This may take a while.**"):
+                success, message = start_crawl_process(
+                    cleaned_url, depth, delay, concurrency, js_rendering
+                )
 
-            crawl_thread = threading.Thread(
-                target=start_crawl,
-                args=(cleaned_url, depth, delay, concurrency, js_rendering),
-            )
-            crawl_thread.start()
-
-            while True:
-                time.sleep(1)
-
-                if not crawl_thread.is_alive():
-                    break
-
-                try:
-                    if os.path.exists("progress.json") and os.path.getsize("progress.json") > 0:
-                        with open("progress.json", "r", encoding="utf-8") as f:
-                            data = json.load(f)
-
-                        total = data.get("total", 1)
-                        completed = data.get("completed", 0)
-                        done = data.get("done", False)
-
-                        progress_percent = int((completed / total) * 100) if total > 0 else 0
-                        progress_bar.progress(progress_percent)
-                        status_text.text(f"🔄 Crawling in progress... ({progress_percent}%)")
-
-                        if done:
-                            break
-                    else:
-                        status_text.text("⏳ Waiting for progress update...")
-                except (json.JSONDecodeError, FileNotFoundError):
-                    status_text.text("⚠️ Error reading progress. Retrying...")
-
-            crawl_thread.join()
-
-            progress_bar.progress(100)
-            status_text.text("✅ Crawl complete!")
-            st.success("🎉 Crawl complete! Click 'Load Results' to see the data.")
+            if success:
+                st.success("🎉 Crawl complete! Click 'Load Results' to see the data.")
+            else:
+                st.error("🔥 Crawl failed!")
+                st.text_area("Error Log:", message, height=300)
         else:
             st.warning("⚠️ Please enter a valid URL.")
 
     if st.button("Load Results"):
-        if os.path.exists("output.csv"):
-            df = pd.read_csv("output.csv")
-            st.write("### Crawled Data:")
-            st.dataframe(df)
+        db_file = "growling_cat.db"
+        if os.path.exists(db_file):
+            try:
+                conn = sqlite3.connect(db_file)
+                df = pd.read_sql_query("SELECT * FROM pages", conn)
+                conn.close()
+
+                st.write("### 📊 Dashboard")
+                total_pages = len(df)
+                missing_titles = len(df[df['title'] == 'N/A'])
+                missing_descriptions = len(df[df['meta_description'] == 'N/A'])
+
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Total Pages Crawled", total_pages)
+                col2.metric("Pages with Missing Titles", missing_titles)
+                col3.metric("Pages with Missing Descriptions", missing_descriptions)
+
+                st.write("### Crawled Data:")
+                st.dataframe(df)
+            except Exception as e:
+                st.error(f"❌ An error occurred while loading results: {e}")
         else:
-            st.error("❌ No results found. Try crawling a different website.")
+            st.error("❌ No results database found. Please run a crawl first.")
 
     st.markdown("---")
     st.subheader(" Frequently Asked Questions (FAQ)")
@@ -111,10 +112,10 @@ def main():
     with st.expander("What does Crawl Depth mean?"):
         st.write(
             """
-            **Crawl Depth** determines how deep the crawler goes into the website.  
-            - **1** = Only the homepage  
-            - **2** = Homepage + first-level links  
-            - **3+** = Deeper levels (more pages, but slower)  
+            **Crawl Depth** determines how deep the crawler goes into the website.
+            - **1** = Only the homepage
+            - **2** = Homepage + first-level links
+            - **3+** = Deeper levels (more pages, but slower)
             Higher depth = More pages, but takes longer.
             """
         )
@@ -122,9 +123,9 @@ def main():
     with st.expander(" What is Download Delay?"):
         st.write(
             """
-            **Download Delay** is the wait time between requests to the same website.  
-            - **Lower delay (0-1s) = Faster crawling** but might get blocked.  
-            - **Higher delay (2-5s) = Slower but safer** (reduces risk of bans).  
+            **Download Delay** is the wait time between requests to the same website.
+            - **Lower delay (0-1s) = Faster crawling** but might get blocked.
+            - **Higher delay (2-5s) = Slower but safer** (reduces risk of bans).
             Recommended: 0.5s (default).
             """
         )
@@ -132,9 +133,9 @@ def main():
     with st.expander(" What does Concurrent Requests do?"):
         st.write(
             """
-            This controls how many pages the crawler processes at the same time.  
-            - **Higher (8-16)** = Faster crawling, but may overload the site.  
-            - **Lower (1-4)** = Slower, but safer.  
+            This controls how many pages the crawler processes at the same time.
+            - **Higher (8-16)** = Faster crawling, but may overload the site.
+            - **Lower (1-4)** = Slower, but safer.
             Default: **8** (Balanced speed).
             """
         )
@@ -142,9 +143,9 @@ def main():
     with st.expander(" Should I enable JavaScript Rendering?"):
         st.write(
             """
-            Some websites load content using JavaScript (JS).  
-            - **Enable this if the site uses JS for important content.**  
-            - **Disabling it makes crawling faster** (recommended for most sites).  
+            Some websites load content using JavaScript (JS).
+            - **Enable this if the site uses JS for important content.**
+            - **Disabling it makes crawling faster** (recommended for most sites).
             **Downside:** Slower crawling if enabled.
             """
         )

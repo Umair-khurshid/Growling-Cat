@@ -1,9 +1,10 @@
 import logging
 from urllib.parse import urljoin, urlparse
 
-import pandas as pd
 import scrapy
-from scrapy.http import HtmlResponse  # For Selenium integration
+from scrapy.http import HtmlResponse
+
+from items import PageItem
 
 # Logging configuration
 logger = logging.getLogger(__name__)
@@ -25,8 +26,6 @@ class SEOCrawler(scrapy.Spider):
     def __init__(self, start_url, depth_limit=5, js_rendering="False", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_urls = [start_url]
-        self.results = []
-        self.broken_links_by_referrer = {}
         self.js_rendering = js_rendering.lower() == "true"
         self.depth_limit = int(depth_limit)
 
@@ -61,54 +60,36 @@ class SEOCrawler(scrapy.Spider):
             else:
                 sel = response
 
-            title = sel.xpath("//title/text()").get()
-            meta_desc = sel.xpath("//meta[@name='description']/@content").get()
-            canonical = sel.xpath("//link[@rel='canonical']/@href").get()
+            item = PageItem()
+            item['url'] = response.url
+            item['title'] = sel.xpath("//title/text()").get(default="N/A").strip()
+            item['meta_description'] = sel.xpath("//meta[@name='description']/@content").get(default="N/A").strip()
+            item['canonical'] = sel.xpath("//link[@rel='canonical']/@href").get(default="N/A").strip()
+            item['h1_tags'] = "; ".join(sel.xpath("//h1//text()").getall()).strip() or "N/A"
+            item['h2_tags'] = "; ".join(sel.xpath("//h2//text()").getall()).strip() or "N/A"
+            item['h3_tags'] = "; ".join(sel.xpath("//h3//text()").getall()).strip() or "N/A"
+            item['image_alts'] = "; ".join(sel.xpath("//img[@alt]/@alt").getall()).strip() or "N/A"
+            item['json_ld'] = "; ".join(sel.xpath("//script[@type='application/ld+json']/text()").getall()).strip() or "N/A"
 
-            h1_tags = sel.xpath("//h1//text()").getall()
-            h2_tags = sel.xpath("//h2//text()").getall()
-            h3_tags = sel.xpath("//h3//text()").getall()
-            image_alts = sel.xpath("//img[@alt]/@alt").getall()
-            json_ld_scripts = sel.xpath(
-                "//script[@type='application/ld+json']/text()"
-            ).getall()
+            yield item
 
-            result = {
-                "URL": response.url,
-                "Title": title.strip() if title else "N/A",
-                "Meta Description": meta_desc.strip() if meta_desc else "N/A",
-                "Canonical": canonical.strip() if canonical else "N/A",
-                "H1 Tags": "; ".join(h1_tags) if h1_tags else "N/A",
-                "H2 Tags": "; ".join(h2_tags) if h2_tags else "N/A",
-                "H3 Tags": "; ".join(h3_tags) if h3_tags else "N/A",
-                "Image Alts": "; ".join(image_alts) if image_alts else "N/A",
-                "JSON-LD": "; ".join(json_ld_scripts) if json_ld_scripts else "N/A",
-                "Broken Links": "N/A",
-            }
+            current_depth = response.meta.get("depth", 0)
+            if current_depth < self.depth_limit:
+                parsed_start = urlparse(self.start_urls[0])
+                for link in sel.css("a::attr(href)").getall():
+                    full_url = urljoin(response.url, link)
+                    parsed_link = urlparse(full_url)
 
-            self.results.append(result)
-            logger.info("Parsed URL: %s", response.url)
-
-            parsed_start = urlparse(self.start_urls[0])
-            for link in sel.css("a::attr(href)").getall():
-                full_url = urljoin(response.url, link)
-                parsed_link = urlparse(full_url)
-
-                if parsed_link.netloc == parsed_start.netloc:
-                    logger.debug(
-                        "Following internal link: %s from %s", full_url, response.url
-                    )
-                    yield response.follow(
-                        full_url,
-                        callback=self.parse,
-                        errback=self.errback_handler,
-                        meta={
-                            "referrer": response.url,
-                            "depth": response.meta.get("depth", 0) + 1,
-                        },
-                    )
-                else:
-                    logger.debug("Skipping external link: %s", full_url)
+                    if parsed_link.netloc == parsed_start.netloc:
+                        yield response.follow(
+                            full_url,
+                            callback=self.parse,
+                            errback=self.errback_handler,
+                            meta={
+                                "referrer": response.url,
+                                "depth": current_depth + 1,
+                            },
+                        )
 
         except Exception as e:
             logger.error("Error parsing %s: %s", response.url, e)
@@ -116,37 +97,12 @@ class SEOCrawler(scrapy.Spider):
     def errback_handler(self, failure):
         request = failure.request
         referrer = request.meta.get("referrer")
-        error_msg = repr(failure.value)
-        broken_info = f"{request.url} (Error: {error_msg})"
-
-        if referrer:
-            if referrer in self.broken_links_by_referrer:
-                self.broken_links_by_referrer[referrer].append(broken_info)
-            else:
-                self.broken_links_by_referrer[referrer] = [broken_info]
-
-        logger.error(
-            "Broken link from %s: %s | Error: %s",
-            referrer, request.url, error_msg
-        )
+        logger.error(f"Broken link from {referrer}: {request.url} (Error: {failure.value})")
+        # Here you could potentially yield an item for the broken link to be stored
+        # For now, we just log it.
 
     def closed(self, reason):
-        try:
-            if self.js_rendering:
-                self.driver.quit()
-                logger.info("Selenium WebDriver closed.")
-
-            for result in self.results:
-                url = result.get("URL")
-                broken_links = self.broken_links_by_referrer.get(url, [])
-                result["Broken Links"] = "; ".join(broken_links) if broken_links else "N/A"
-
-            if self.results:
-                df = pd.DataFrame(self.results)
-                df.to_csv("output.csv", index=False)
-                logger.info("Crawling finished. Results saved to output.csv")
-            else:
-                logger.warning("No data collected. output.csv not written.")
-
-        except Exception as e:
-            logger.error("Error closing crawler: %s", e)
+        if self.js_rendering and hasattr(self, 'driver'):
+            self.driver.quit()
+            logger.info("Selenium WebDriver closed.")
+        logger.info(f"Crawler finished. Reason: {reason}")
