@@ -25,3 +25,9 @@ streamlit run app.py
  ```
 *You can also use the demo at: [Growling Cat](https://growlingcat.streamlit.app/)*
 
+## Troubleshooting
+Some websites have strong anti-scraping protections. If a crawl fails or returns no results, try the following:
+- **Increase Download Delay**: In the "Advanced Settings," increase the download delay to 2-3 seconds to avoid being rate-limited.
+- **Reduce Concurrency**: Lower the number of concurrent requests to 1 or 2.
+- **Note**: Some sites may still be difficult to crawl even with these adjustments.
+

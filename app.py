@@ -150,6 +150,15 @@ def main():
             """
         )
 
+    with st.expander("Why did my crawl fail or return no results?"):
+        st.write(
+            """
+            Websites can employ anti-scraping measures. If a crawl fails or returns zero pages, it's likely due to one of the following:
+            - **Rate Limiting:** The site is blocking the crawler for making too many requests too quickly. **Try increasing the "Download Delay"** in the advanced settings to be more respectful of the site's limits.
+            - **Sophisticated Anti-Bot Protection:** Some sites use advanced services (like Cloudflare or Akamai) that can detect and block automated crawlers. These are very difficult to bypass.
+            """
+        )
+
 
 if __name__ == "__main__":
     main()
