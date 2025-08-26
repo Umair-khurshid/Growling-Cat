@@ -14,22 +14,32 @@ def run_single_crawl(start_url, depth, delay, concurrency, js_rendering):
     This function is designed to be called from a separate process.
     """
     try:
-        # Configure Scrapy settings
-        settings = get_project_settings()
-        settings.set('DEPTH_LIMIT', depth)
-        settings.set('DOWNLOAD_DELAY', delay)
-        settings.set('CONCURRENT_REQUESTS', concurrency)
-        settings.set('ITEM_PIPELINES', {
-            'pipelines.SqlitePipeline': 300,
-        })
-        # Set a less verbose log level for cleaner output
-        settings.set('LOG_LEVEL', 'INFO')
+        # Consolidated Scrapy settings
+        settings = {
+            'DEPTH_LIMIT': depth,
+            'DOWNLOAD_DELAY': delay,
+            'CONCURRENT_REQUESTS': concurrency,
+            'ITEM_PIPELINES': {
+                'pipelines.SqlitePipeline': 300,
+            },
+            'LOG_LEVEL': 'INFO',
+            "DOWNLOAD_TIMEOUT": 40,
+            "RETRY_ENABLED": True,
+            "RETRY_TIMES": 8,
+            "RETRY_HTTP_CODES": [522, 500, 502, 503, 504, 408],
+            "ROBOTSTXT_OBEY": False,
+            "DOWNLOADER_MIDDLEWARES": {
+                "middlewares.RotatingUserAgentMiddleware": 543,
+            },
+            "EXTENSIONS": {
+                "extensions.ProgressExtension": 500,
+            },
+        }
 
         process = CrawlerProcess(settings)
         process.crawl(
             SEOCrawler,
             start_url=start_url,
-            depth_limit=depth,
             js_rendering=js_rendering
         )
         # The script will block here until the crawling is finished

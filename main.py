@@ -21,7 +21,7 @@ def run_crawler(url, depth, delay, concurrency, js_rendering):
     Spawns a new Python process to run crawl.py with custom parameters.
     """
     python_executable = sys.executable
-    script_path = os.path.join(os.path.dirname(__file__), "crawl.py")
+    script_path = os.path.join(os.path.dirname(__file__), "run_crawl_process.py")
 
     args = [
         python_executable,

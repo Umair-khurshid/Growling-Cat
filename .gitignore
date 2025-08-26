@@ -180,3 +180,4 @@ growling_cat.db
 growling_cat.db-journal
 *.log
 
+progress.json
