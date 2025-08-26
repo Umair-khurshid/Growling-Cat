@@ -55,5 +55,5 @@ and analyzes web pages, providing valuable insights into SEO elements, internal 
      rate-limited.
    - Reduce Concurrency: Lower the number of concurrent requests to 1 or 2.
    
- *Note:Some sites may still be difficult to crawl even with these adjustments.*
+ *Note: Some sites may still be difficult to crawl even with these adjustments.*
 
