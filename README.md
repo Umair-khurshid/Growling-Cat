@@ -35,12 +35,12 @@ and analyzes web pages, providing valuable insights into SEO elements, internal 
   You can also run the crawler from the command line:
 
  ```
- python main.py <url> <depth> <delay> <concurrency> <js_rendering>
+ python cli.py <url> <depth> <delay> <concurrency> <js_rendering>
  ```
  Example:
 
  ```
- python main.py https://quotes.toscrape.com/ 2 0.5 8 False
+ python cli.py https://quotes.toscrape.com/ 2 0.5 8 False
 ```
  **3. Docker**
   You can run the Streamlit UI in a Docker container.
