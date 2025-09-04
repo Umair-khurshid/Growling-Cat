@@ -29,7 +29,7 @@ class SEOCrawler(scrapy.Spider):
         self.js_rendering = js_rendering.lower() == "true"
         self.depth_limit = int(depth_limit)
 
-        domain = urlparse(start_url).netloc
+        domain = urlparse(start_url).netloc.split(':')[0]
         self.allowed_domains = [domain]
         logger.info(
             "Initialized crawler with start URL: %s and allowed domain: %s",
