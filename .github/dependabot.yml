@@ -1,24 +1,20 @@
 version: 2
 updates:
-  # Keep the base Docker image up to date
+  # Docker updates
   - package-ecosystem: "docker"
-    directory: "/" # Location of the Dockerfile
+    directory: "/"
     schedule:
       interval: "weekly"
 
-  # Keep production Python dependencies up to date
+  # Python updates (both requirements.txt and requirements-dev.txt)
   - package-ecosystem: "pip"
-    directory: "/" # requirements.txt is at the root
+    directory: "/"
     schedule:
       interval: "weekly"
-
-  # Keep development Python dependencies up to date
-  - package-ecosystem: "pip"
-    directory: "/" # requirements-dev.txt is also at the root
-    schedule:
-      interval: "weekly"
-      
-    # Tell Dependabot which file to look at
-    allow:
-      - dependency-type: "development"
-
+    groups:
+      prod-deps:
+        patterns:
+          - "requirements.txt"
+      dev-deps:
+        patterns:
+          - "requirements-dev.txt"
