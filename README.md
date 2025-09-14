@@ -1,4 +1,16 @@
+<div align="center">
+
 # Growling Cat - SEO Crawler 🐈
+
+</div>
+
+<div align="center">
+
+[![Docker Image CI](https://github.com/Umair-khurshid/Growling-Cat/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Umair-khurshid/Growling-Cat/actions/workflows/docker-image.yml)
+[![Pylint](https://github.com/Umair-khurshid/Growling-Cat/actions/workflows/pylint.yml/badge.svg)](https://github.com/Umair-khurshid/Growling-Cat/actions/workflows/pylint.yml)
+
+</div>
+
 Growling Cat is a open-source SEO crawler designed as a cross-platform alternative to Screaming Frog. It efficiently scrapes
 and analyzes web pages, providing valuable insights into SEO elements, internal linking, and broken links.
 
