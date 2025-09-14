@@ -50,7 +50,7 @@ class SEOCrawler(scrapy.Spider):
             self.driver = webdriver.Chrome(options=chrome_options)
             logger.info("Selenium WebDriver initialized for JS rendering.")
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         """
         Parses the response from a webpage, extracts SEO data, and follows links.
         """
