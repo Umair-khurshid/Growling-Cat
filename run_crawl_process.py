@@ -1,7 +1,11 @@
+"""
+This script is a dedicated entry point for running the Scrapy crawler.
+It's designed to be called as a subprocess from the main Streamlit app,
+ensuring that the Scrapy reactor runs in a clean, isolated process.
+"""
 import sys
 import logging
 from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
 from crawler import SEOCrawler
 
 # Configure basic logging
@@ -46,23 +50,34 @@ def run_single_crawl(start_url, depth, delay, concurrency, js_rendering):
         process.start()
         logger.info("Crawl process finished successfully.")
 
-    except Exception as e:
-        logger.error(f"An error occurred during the crawl process: {e}")
+    except Exception as e:  # pylint: disable=broad-except
+        # We are catching a broad exception here because Scrapy can raise a wide
+        # variety of exceptions, and we want to make sure we log all of them.
+        logger.error("An error occurred during the crawl process: %s", e)
         sys.exit(1) # Exit with an error code if something goes wrong
 
-if __name__ == "__main__":
+def main():
+    """
+    Main function to run the crawl process.
+    """
     # This block is executed when the script is run directly
     if len(sys.argv) != 6:
-        print("Usage: python run_crawl_process.py <start_url> <depth> <delay> <concurrency> <js_rendering>")
+        print(
+            "Usage: python run_crawl_process.py "
+            "<start_url> <depth> <delay> <concurrency> <js_rendering>"
+        )
         sys.exit(1)
 
     # Unpack command-line arguments
-    _script_name, start_url, depth, delay, concurrency, js_rendering = sys.argv
+    _script_name, start_url_arg, depth_arg, delay_arg, concurrency_arg, js_rendering_arg = sys.argv
 
     # Convert arguments to their correct types
-    depth = int(depth)
-    delay = float(delay)
-    concurrency = int(concurrency)
+    depth = int(depth_arg)
+    delay = float(delay_arg)
+    concurrency = int(concurrency_arg)
     # js_rendering is already a string 'True' or 'False', which is handled by the crawler
 
-    run_single_crawl(start_url, depth, delay, concurrency, js_rendering)
+    run_single_crawl(start_url_arg, depth, delay, concurrency, js_rendering_arg)
+
+if __name__ == "__main__":
+    main()

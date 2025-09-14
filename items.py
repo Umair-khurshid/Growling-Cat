@@ -1,6 +1,12 @@
+"""
+This module defines the Scrapy items that will be used to store the crawled data.
+"""
 import scrapy
 
 class PageItem(scrapy.Item):
+    """
+    A Scrapy item that represents a single webpage and its SEO data.
+    """
     url = scrapy.Field()
     title = scrapy.Field()
     meta_description = scrapy.Field()

@@ -1,3 +1,6 @@
+"""
+This module provides a command-line interface for running the crawler.
+"""
 import logging
 import os
 import subprocess

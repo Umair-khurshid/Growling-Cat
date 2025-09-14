@@ -1,14 +1,20 @@
+"""
+This module contains Scrapy item pipelines.
+"""
 import sqlite3
 import logging
 
 logger = logging.getLogger(__name__)
 
 class SqlitePipeline:
+    """
+    A Scrapy pipeline that stores items in a SQLite database.
+    """
     def __init__(self):
         self.connection = None
         self.cursor = None
 
-    def open_spider(self, spider):
+    def open_spider(self, _spider):
         """This method is called when the spider is opened."""
         try:
             self.connection = sqlite3.connect("growling_cat.db")
@@ -31,16 +37,16 @@ class SqlitePipeline:
             self.connection.commit()
             logger.info("Successfully connected to SQLite database.")
         except sqlite3.Error as e:
-            logger.error(f"Database error: {e}")
+            logger.error("Database error: %s", e)
             raise
 
-    def close_spider(self, spider):
+    def close_spider(self, _spider):
         """This method is called when the spider is closed."""
         if self.connection:
             self.connection.close()
             logger.info("SQLite database connection closed.")
 
-    def process_item(self, item, spider):
+    def process_item(self, item, _spider):
         """This method is called for every item pipeline component."""
         try:
             self.cursor.execute(
@@ -65,7 +71,7 @@ class SqlitePipeline:
                 )
             )
             self.connection.commit()
-            logger.debug(f"Item stored in database: {item['url']}")
+            logger.debug("Item stored in database: %s", item['url'])
         except sqlite3.Error as e:
-            logger.error(f"Failed to insert item {item['url']}: {e}")
+            logger.error("Failed to insert item %s: %s", item['url'], e)
         return item

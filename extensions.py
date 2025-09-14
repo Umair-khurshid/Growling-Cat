@@ -1,5 +1,7 @@
+"""
+This module contains Scrapy extensions.
+"""
 import json
-import os
 from scrapy import signals
 
 
@@ -16,6 +18,9 @@ class ProgressExtension:
 
     @classmethod
     def from_crawler(cls, crawler):
+        """
+        This method is used by Scrapy to create your extension.
+        """
         ext = cls()
         crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signal=signals.spider_closed)
@@ -24,25 +29,37 @@ class ProgressExtension:
         crawler.signals.connect(ext.request_dropped, signal=signals.request_dropped)
         return ext
 
-    def spider_opened(self, spider):
+    def spider_opened(self, _spider):
+        """
+        Called when the spider is opened.
+        """
         self.total_requests = 0
         self.completed_requests = 0
         self.done = False
         self.update_progress_file()
 
-    def spider_closed(self, spider, reason):
+    def spider_closed(self, _spider, _reason):
+        """
+        Called when the spider is closed.
+        """
         self.done = True
         self.update_progress_file()
 
-    def request_scheduled(self, request, spider):
+    def request_scheduled(self, _request, _spider):
+        """
+        Called when a request is scheduled.
+        """
         self.total_requests += 1
         self.update_progress_file()
 
-    def response_received(self, response, request, spider):
+    def response_received(self, _response, _request, _spider):
+        """
+        Called when a response is received.
+        """
         self.completed_requests += 1
         self.update_progress_file()
 
-    def request_dropped(self, request, spider):
+    def request_dropped(self, _request, _spider):
         """
         If a request is dropped (e.g., filtered by dupefilter),
         treat it as completed so the progress doesn't stall.
