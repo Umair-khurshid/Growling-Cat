@@ -31,10 +31,9 @@ def run_single_crawl(start_url, depth, delay, concurrency, js_rendering):
             "RETRY_ENABLED": True,
             "RETRY_TIMES": 8,
             "RETRY_HTTP_CODES": [522, 500, 502, 503, 504, 408],
-            "ROBOTSTXT_OBEY": False,
-            "DOWNLOADER_MIDDLEWARES": {
-                "middlewares.RotatingUserAgentMiddleware": 543,
-            },
+            "ROBOTSTXT_OBEY": True,
+            "USER_AGENT": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "DOWNLOADER_MIDDLEWARES": {},
             "EXTENSIONS": {
                 "extensions.ProgressExtension": 500,
             },
@@ -62,10 +61,11 @@ def main():
     """
     # This block is executed when the script is run directly
     if len(sys.argv) != 6:
-        print(
-            "Usage: python run_crawl_process.py "
-            "<start_url> <depth> <delay> <concurrency> <js_rendering>"
+        usage = (
+            "Usage: python run_crawl_process.py <start_url> <depth> <delay> "
+            "<concurrency> <js_rendering>"
         )
+        print(usage)
         sys.exit(1)
 
     # Unpack command-line arguments
