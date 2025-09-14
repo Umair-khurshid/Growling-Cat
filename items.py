@@ -4,6 +4,7 @@ This module defines the Scrapy items that will be used to store the crawled data
 import scrapy
 
 class PageItem(scrapy.Item):
+    # pylint: disable=too-few-public-methods
     """
     A Scrapy item that represents a single webpage and its SEO data.
     """

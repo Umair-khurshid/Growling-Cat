@@ -1,7 +1,12 @@
+"""
+Tests for the SEOCrawler spider.
+"""
+# pylint: disable=wrong-import-position,redefined-outer-name
+import os
+import sys
+
 import pytest
 from scrapy.http import HtmlResponse, Request
-import sys
-import os
 
 # Add the project root to the Python path
 # This is necessary for the test runner to find the 'crawler' and 'items' modules
@@ -25,9 +30,9 @@ def spider():
 def sample_html_response():
     """Pytest fixture to create a Scrapy HtmlResponse from the sample HTML file."""
     sample_html_path = os.path.join(TEST_DIR, "sample.html")
-    with open(sample_html_path, "r") as f:
+    with open(sample_html_path, "r", encoding="utf-8") as f:
         html_content = f.read()
-    
+
     # The URL is important for the spider to resolve relative links
     request = Request(url="https://example.com")
     response = HtmlResponse(
@@ -45,7 +50,7 @@ def test_parse_seo_data(spider, sample_html_response):
     """
     # The parse method is a generator, so we consume it and get the first item
     results = list(spider.parse(sample_html_response))
-    
+
     # We expect the first yielded item to be a PageItem
     item = results[0]
     assert isinstance(item, PageItem)
@@ -67,17 +72,17 @@ def test_follow_internal_links(spider, sample_html_response):
     Test that the spider follows internal links and ignores external ones.
     """
     results = list(spider.parse(sample_html_response))
-    
+
     # Filter for yielded Request objects (the links to follow)
     requests = [r for r in results if isinstance(r, Request)]
-    
+
     # There are two internal links in the sample HTML
     assert len(requests) == 2
-    
+
     followed_urls = {req.url for req in requests}
     assert "https://example.com/internal-link" in followed_urls
     assert "https://example.com/another-internal-link" in followed_urls
-    
+
     # Ensure the external link is not followed
     assert "https://external.com/external-link" not in followed_urls
 
@@ -85,9 +90,9 @@ def test_follow_internal_links(spider, sample_html_response):
 def sample_js_html_response():
     """Pytest fixture to create a Scrapy HtmlResponse from the JS sample HTML file."""
     sample_html_path = os.path.join(TEST_DIR, "sample_js.html")
-    with open(sample_html_path, "r") as f:
+    with open(sample_html_path, "r", encoding="utf-8") as f:
         html_content = f.read()
-    
+
     request = Request(url="https://example.com/js")
     response = HtmlResponse(
         url="https://example.com/js",
@@ -126,19 +131,19 @@ def test_parse_js_rendered_content(mocker, sample_js_html_response):
     
     </body></html>"""
     mock_driver.page_source = final_html
-    
+
     # Mock the webdriver.Chrome class to return our mock_driver instance
     mocker.patch('selenium.webdriver.Chrome', return_value=mock_driver)
 
     # Initialize the spider with JS rendering enabled
     spider = SEOCrawler(start_url="https://example.com/js", js_rendering="True")
-    
+
     # The parse method is a generator, so we consume it and get the first item
     results = list(spider.parse(sample_js_html_response))
     item = results[0]
 
     # Assert that the dynamically added H2 tag is found
     assert item['h2_tags'] == 'This H2 was added by JavaScript'
-    
+
     # Ensure the driver was used
     mock_driver.get.assert_called_once_with("https://example.com/js")
