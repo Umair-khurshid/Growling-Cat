@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Final Image
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Create a non-root user
 RUN useradd --create-home appuser
