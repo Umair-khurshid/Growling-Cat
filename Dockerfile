@@ -1,12 +1,12 @@
 # Stage 1: Builder
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
 # Install build dependencies and clean up apt cache
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        gcc \
+        build-essential \
         libxml2-dev \
         libxslt1-dev \
     && rm -rf /var/lib/apt/lists/*
