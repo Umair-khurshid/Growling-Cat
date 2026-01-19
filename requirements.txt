@@ -1,8 +1,9 @@
-streamlit
-scrapy
-pandas
-selenium
-lxml
-tqdm
-requests
+streamlit==1.53.0
+scrapy==2.14.0
+pandas==2.3.3
+selenium==4.39.0
+lxml==6.0.0
+tqdm==4.67.1
+requests==2.35.5
+urllib3>=2.6.0
 
