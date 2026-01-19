@@ -5,8 +5,12 @@ WORKDIR /app
 
 # Install build dependencies and clean up apt cache
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+        gcc \
+        libxml2-dev \
+        libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 
 # Create a virtual environment
 RUN python -m venv /opt/venv
