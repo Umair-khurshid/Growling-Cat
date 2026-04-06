@@ -4,6 +4,6 @@ pandas==2.3.3
 selenium==4.41.0
 lxml==6.0.2
 tqdm==4.67.3
-requests==2.33.0
+requests==2.33.1
 urllib3>=2.6.0
 
