@@ -1,5 +1,5 @@
 streamlit==1.56.0
-scrapy==2.15.1
+scrapy==2.15.2
 pandas==2.3.3
 selenium==4.43.0
 lxml==6.1.0
