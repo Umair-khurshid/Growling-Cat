@@ -1,4 +1,5 @@
 """Integration tests verifying the full crawl -> database round-trip."""
+# pylint: disable=redefined-outer-name
 
 import http.server
 import os

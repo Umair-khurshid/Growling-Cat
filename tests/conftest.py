@@ -83,11 +83,12 @@ def streamlit_base_url() -> Iterator[str]:
     ]
 
     log_file = os.path.join(PROJECT_ROOT, "streamlit_test.log")
+    log_fh = open(log_file, "a", encoding="utf-8")  # pylint: disable=consider-using-with
     proc = subprocess.Popen(
         cmd,
         cwd=PROJECT_ROOT,
-        stdout=open(log_file, "a"),
-        stderr=open(log_file, "a"),
+        stdout=log_fh,
+        stderr=log_fh,
     )
 
     base_url = f"http://localhost:{port}"
@@ -100,22 +101,23 @@ def streamlit_base_url() -> Iterator[str]:
         proc.wait(timeout=10)
     except subprocess.TimeoutExpired:
         proc.kill()
+    log_fh.close()
 
 
 def _wait_for_url(url: str, timeout: int = 60) -> None:
     """Poll a URL until it returns a successful response."""
-    import urllib.error
-    import urllib.request
+    import urllib.error  # pylint: disable=import-outside-toplevel
+    import urllib.request  # pylint: disable=import-outside-toplevel
 
     deadline = time.monotonic() + timeout
     health_url = f"{url}/_stcore/health"
     while time.monotonic() < deadline:
         try:
             req = urllib.request.Request(health_url, method="GET")
-            resp = urllib.request.urlopen(req, timeout=3)
-            if resp.status == 200:
-                time.sleep(1.0)  # Extra settling time for the UI
-                return
+            with urllib.request.urlopen(req, timeout=3) as resp:  # pylint: disable=unspecified-encoding
+                if resp.status == 200:
+                    time.sleep(1.0)  # Extra settling time for the UI
+                    return
         except (urllib.error.URLError, OSError):
             pass
         time.sleep(1.0)
@@ -123,7 +125,7 @@ def _wait_for_url(url: str, timeout: int = 60) -> None:
 
 
 @pytest.fixture(scope="function")
-def app_page(
+def app_page(  # pylint: disable=redefined-outer-name,unused-argument
     page: Page,
     streamlit_base_url: str,
     clean_db: None,

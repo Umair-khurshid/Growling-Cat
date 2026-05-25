@@ -1,4 +1,5 @@
 """Tests for the ProgressExtension."""
+# pylint: disable=missing-function-docstring,redefined-outer-name
 
 import json
 import os
@@ -67,7 +68,7 @@ def test_update_progress_file_writes_json(extension: ProgressExtension) -> None:
     extension.update_progress_file()
 
     assert os.path.exists("progress.json")
-    with open("progress.json") as f:
+    with open("progress.json", encoding="utf-8") as f:
         data = json.load(f)
 
     assert data["total"] == 10

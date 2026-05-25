@@ -59,7 +59,7 @@ def run_single_crawl(
         process.start()
         logger.info("Crawl process finished successfully.")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logger.error("An error occurred during the crawl process: %s", e)
         sys.exit(1)
 

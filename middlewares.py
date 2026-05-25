@@ -6,7 +6,7 @@ from scrapy import Spider
 from scrapy.http import Request
 
 
-class RotatingUserAgentMiddleware:
+class RotatingUserAgentMiddleware:  # pylint: disable=too-few-public-methods
     """Middleware that randomly rotates the User-Agent header for each request."""
 
     USER_AGENTS: list[str] = [

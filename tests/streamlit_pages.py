@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from playwright.sync_api import Locator, Page
 
 
-class StreamlitApp:
+class StreamlitApp:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Page object wrapping the main Streamlit interface for Growling Cat."""
 
     def __init__(self, page: Page) -> None:

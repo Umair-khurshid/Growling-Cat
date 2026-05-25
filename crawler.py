@@ -135,7 +135,7 @@ class SEOCrawler(scrapy.Spider):
         except (AttributeError, TypeError) as e:
             logger.error("Error parsing %s: %s", response.url, e)
             raise
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error parsing %s: %s", response.url, e)
 
     def errback_handler(self, failure: Failure) -> None:

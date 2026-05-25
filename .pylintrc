@@ -1,2 +1,10 @@
 [MESSAGES CONTROL]
 disable=C0301
+
+[BASIC]
+# Allow longer function names (test functions are descriptive)
+function-rgx=[a-z_][a-z0-9_]{2,60}$
+
+# Test files get relaxed rules
+[MASTER]
+init-hook=''

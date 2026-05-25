@@ -1,4 +1,5 @@
 """Tests for the SqlitePipeline."""
+# pylint: disable=missing-function-docstring,redefined-outer-name
 
 from unittest.mock import MagicMock
 

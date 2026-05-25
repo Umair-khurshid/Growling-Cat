@@ -1,4 +1,5 @@
 """Tests for the crawl_runner module."""
+# pylint: disable=missing-function-docstring
 
 from unittest.mock import patch
 

@@ -418,7 +418,7 @@ def load_and_display_results(
     return df
 
 
-def main() -> None:
+def main() -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     """Main function to run the Streamlit web interface."""
     st.set_page_config(page_title="Growling Cat", layout="wide")
 

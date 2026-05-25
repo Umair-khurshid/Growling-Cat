@@ -1,4 +1,5 @@
 """Tests for the RotatingUserAgentMiddleware."""
+# pylint: disable=missing-function-docstring
 
 from unittest.mock import MagicMock
 

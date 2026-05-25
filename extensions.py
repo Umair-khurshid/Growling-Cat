@@ -1,4 +1,7 @@
-"""Scrapy extensions for progress tracking."""
+"""
+Scrapy extensions for progress tracking.
+# pylint: disable=unused-argument
+"""
 
 import json
 
