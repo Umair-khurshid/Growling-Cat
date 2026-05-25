@@ -6,7 +6,8 @@ from scrapy import Spider
 from scrapy.http import Request
 
 
-class RotatingUserAgentMiddleware:  # pylint: disable=too-few-public-methods
+class RotatingUserAgentMiddleware:
+    # pylint: disable=too-few-public-methods
     """Middleware that randomly rotates the User-Agent header for each request."""
 
     USER_AGENTS: list[str] = [
@@ -29,6 +30,6 @@ class RotatingUserAgentMiddleware:  # pylint: disable=too-few-public-methods
         "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.3",
     ]
 
-    def process_request(self, request: Request, spider: Spider) -> None:  # noqa: ARG002
+    def process_request(self, request: Request, spider: Spider) -> None:  # pylint: disable=unused-argument
         """Assign a random User-Agent header to the outgoing request."""
         request.headers["User-Agent"] = random.choice(self.USER_AGENTS)

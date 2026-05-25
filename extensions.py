@@ -1,7 +1,8 @@
 """
 Scrapy extensions for progress tracking.
-# pylint: disable=unused-argument
 """
+
+# pylint: disable=unused-argument
 
 import json
 

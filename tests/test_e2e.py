@@ -47,7 +47,7 @@ def test_e2e_crawl(http_server):
     """
     scraped_items = []
 
-    def item_scraped_handler(item, response, spider):
+    def item_scraped_handler(item, response, spider):  # pylint: disable=unused-argument
         """Signal handler to capture scraped items."""
         scraped_items.append(item)
 

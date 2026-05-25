@@ -84,7 +84,7 @@ def streamlit_base_url() -> Iterator[str]:
 
     log_file = os.path.join(PROJECT_ROOT, "streamlit_test.log")
     log_fh = open(log_file, "a", encoding="utf-8")  # pylint: disable=consider-using-with
-    proc = subprocess.Popen(
+    proc = subprocess.Popen(  # pylint: disable=consider-using-with
         cmd,
         cwd=PROJECT_ROOT,
         stdout=log_fh,

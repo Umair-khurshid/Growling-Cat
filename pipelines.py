@@ -49,7 +49,7 @@ class SqlitePipeline:
             self.connection.close()
             logger.info("SQLite database connection closed.")
 
-    def process_item(self, item: dict[str, object], spider: Spider) -> dict[str, object]:  # noqa: ARG002
+    def process_item(self, item: dict[str, object], spider: Spider) -> dict[str, object]:  # pylint: disable=unused-argument
         """Insert or replace an item into the pages table."""
         if not self.cursor or not self.connection:
             logger.error("No database cursor or connection available.")
