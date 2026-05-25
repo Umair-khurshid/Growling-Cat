@@ -18,18 +18,122 @@ def inject_custom_css() -> None:
     dark_css = ""
     if st.session_state.get("dark_mode", False):
         dark_css = """
-        .stApp { background-color: #0E1117 !important; }
-        .main .block-container { background-color: #0E1117; }
-        .stSidebar { background-color: #1E1E1E; }
-        .stSidebar .stMarkdown, .stSidebar label { color: #FAFAFA; }
-        [data-testid="stMetricValue"] { color: #58A6FF; }
-        [data-testid="stMetricLabel"] { color: #8B949E; }
-        .st-emotion-cache-1avcm0f { color: #C9D1D9; }
-        h1, h2, h3, h4, h5, h6 { color: #F0F6FC; }
-        .stTextInput label, .stSlider label, .stCheckbox label { color: #C9D1D9; }
-        .stExpander { border-color: #30363D; }
-        .st-bb { border-color: #30363D; }
-        .stAlert { background-color: #21262D; }
+        /* --- Background Colors --- */
+        .stApp, .main, .main .block-container {
+            background-color: #0E1117 !important;
+        }
+        .stSidebar {
+            background-color: #1E1E1E !important;
+        }
+
+        /* --- General Text --- */
+        html, body, p, li, label {
+            color: #E6EDF3 !important;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #F0F6FC !important;
+        }
+        .stSidebar .stMarkdown, .stSidebar label, .stSidebar p {
+            color: #E6EDF3 !important;
+        }
+        a {
+            color: #58A6FF !important;
+        }
+
+        /* --- Input Fields --- */
+        .stTextInput input, textarea {
+            background-color: #161B22 !important;
+            color: #E6EDF3 !important;
+            border-color: #30363D !important;
+        }
+        .stTextInput label, .stSlider label, .stCheckbox label {
+            color: #C9D1D9 !important;
+        }
+
+        /* --- Buttons --- */
+        .stButton button {
+            background-color: #21262D !important;
+            color: #C9D1D9 !important;
+            border-color: #30363D !important;
+        }
+        .stButton button:hover {
+            border-color: #58A6FF !important;
+            color: #58A6FF !important;
+        }
+
+        /* --- Sidebar Widgets --- */
+        .stSidebar .stTextInput input, .stSidebar .stSelectbox select {
+            background-color: #0D1117 !important;
+            color: #E6EDF3 !important;
+            border-color: #30363D !important;
+        }
+
+        /* --- Metrics --- */
+        [data-testid="stMetricValue"] {
+            color: #58A6FF !important;
+        }
+        [data-testid="stMetricLabel"] {
+            color: #8B949E !important;
+        }
+
+        /* --- Alerts --- */
+        [data-testid="stAlert"] {
+            background-color: #161B22 !important;
+            border-color: #30363D !important;
+            color: #E6EDF3 !important;
+        }
+
+        /* --- Expander / FAQ --- */
+        details {
+            background-color: #161B22 !important;
+            border-color: #30363D !important;
+        }
+        details summary {
+            color: #E6EDF3 !important;
+        }
+        details[open] {
+            background-color: #161B22 !important;
+        }
+
+        /* --- DataFrames / Tables --- */
+        [data-testid="stDataFrame"] th, [data-testid="stTable"] th {
+            background-color: #21262D !important;
+            color: #C9D1D9 !important;
+        }
+        [data-testid="stDataFrame"] td, [data-testid="stTable"] td {
+            background-color: #0D1117 !important;
+            color: #C9D1D9 !important;
+        }
+
+        /* --- Progress bar --- */
+        .stProgress > div > div {
+            background-color: #238636 !important;
+        }
+        .stProgress {
+            background-color: #21262D !important;
+        }
+
+        /* --- Toggle --- */
+        label[data-testid="stWidgetLabel"] { color: #E6EDF3 !important; }
+
+        /* --- Download button --- */
+        .stDownloadButton button {
+            background-color: #238636 !important;
+            color: #FFFFFF !important;
+            border-color: #238636 !important;
+        }
+        .stDownloadButton button:hover {
+            background-color: #2EA043 !important;
+        }
+
+        /* --- Horizontal rules --- */
+        hr { border-color: #30363D !important; }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #161B22; }
+        ::-webkit-scrollbar-thumb { background: #30363D; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #484F58; }
         """
     st.markdown(
         f"""
