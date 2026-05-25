@@ -26,29 +26,31 @@ class ProgressExtension:
         crawler.signals.connect(ext.request_dropped, signal=signals.request_dropped)
         return ext
 
-    def spider_opened(self, _spider: Spider) -> None:
+    def spider_opened(self, spider: Spider) -> None:  # noqa: ARG002
         """Reset counters when the spider opens."""
         self.total_requests = 0
         self.completed_requests = 0
         self.done = False
         self.update_progress_file()
 
-    def spider_closed(self, _spider: Spider, _reason: str) -> None:
+    def spider_closed(self, spider: Spider, reason: str) -> None:  # noqa: ARG002
         """Mark crawl as done when the spider closes."""
         self.done = True
         self.update_progress_file()
 
-    def request_scheduled(self, _request: object, _spider: Spider) -> None:
+    def request_scheduled(self, request: object, spider: Spider) -> None:  # noqa: ARG002
         """Increment total request count."""
         self.total_requests += 1
         self.update_progress_file()
 
-    def response_received(self, _response: object, _request: object, _spider: Spider) -> None:
+    def response_received(
+        self, response: object, request: object, spider: Spider
+    ) -> None:  # noqa: ARG002
         """Increment completed request count on response."""
         self.completed_requests += 1
         self.update_progress_file()
 
-    def request_dropped(self, _request: object, _spider: Spider) -> None:
+    def request_dropped(self, request: object, spider: Spider) -> None:  # noqa: ARG002
         """Treat dropped requests as completed to keep progress accurate."""
         self.completed_requests += 1
         self.update_progress_file()

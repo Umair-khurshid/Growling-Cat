@@ -29,6 +29,6 @@ class RotatingUserAgentMiddleware:
         "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.3",
     ]
 
-    def process_request(self, request: Request, _spider: Spider) -> None:
+    def process_request(self, request: Request, spider: Spider) -> None:  # noqa: ARG002
         """Assign a random User-Agent header to the outgoing request."""
         request.headers["User-Agent"] = random.choice(self.USER_AGENTS)

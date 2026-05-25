@@ -15,7 +15,7 @@ class SqlitePipeline:
         self.connection: sqlite3.Connection | None = None
         self.cursor: sqlite3.Cursor | None = None
 
-    def open_spider(self, _spider: Spider) -> None:
+    def open_spider(self, _spider: Spider | None = None) -> None:
         """Called when the spider is opened. Creates the database and table."""
         try:
             self.connection = sqlite3.connect("growling_cat.db")
@@ -43,13 +43,13 @@ class SqlitePipeline:
             logger.error("Database error: %s", e)
             raise
 
-    def close_spider(self, _spider: Spider) -> None:
+    def close_spider(self, _spider: Spider | None = None) -> None:
         """Called when the spider is closed. Closes the database connection."""
         if self.connection:
             self.connection.close()
             logger.info("SQLite database connection closed.")
 
-    def process_item(self, item: dict[str, object], _spider: Spider) -> dict[str, object]:
+    def process_item(self, item: dict[str, object], spider: Spider) -> dict[str, object]:  # noqa: ARG002
         """Insert or replace an item into the pages table."""
         if not self.cursor or not self.connection:
             logger.error("No database cursor or connection available.")

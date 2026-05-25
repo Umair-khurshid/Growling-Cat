@@ -150,9 +150,9 @@ class SEOCrawler(scrapy.Spider):
             "Broken link from %s: %s (Error: %s)", referrer, request.url, failure.value
         )
 
-    def closed(self, _reason: str) -> None:
+    def closed(self, reason: str) -> None:  # noqa: ARG002
         """Called when the spider is closed. Clean up resources."""
         if self.js_rendering and self.driver:
             self.driver.quit()
             logger.info("Selenium WebDriver closed.")
-        logger.info("Crawler finished. Reason: %s", _reason)
+        logger.info("Crawler finished. Reason: %s", reason)

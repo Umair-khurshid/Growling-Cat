@@ -40,7 +40,7 @@ def run_single_crawl(
             "RETRY_ENABLED": True,
             "RETRY_TIMES": 8,
             "RETRY_HTTP_CODES": [522, 500, 502, 503, 504, 408],
-            "ROBOTSTXT_OBEY": True,
+            "ROBOTSTXT_OBEY": False,
             "USER_AGENT": (
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
                 " AppleWebKit/537.36 (KHTML, like Gecko)"
