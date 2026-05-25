@@ -14,14 +14,14 @@ from items import PageItem
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-fh = logging.FileHandler("crawler.log")
-fh.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"
-)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+if not logger.handlers:
+    fh = logging.FileHandler("crawler.log")
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s"
+    )
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
 
 class SEOCrawler(scrapy.Spider):
@@ -38,6 +38,7 @@ class SEOCrawler(scrapy.Spider):
 
         domain = urlparse(start_url).netloc.split(':')[0]
         self.allowed_domains = [domain]
+        self.broken_links: dict[str, list[str]] = {}
         logger.info(
             "Initialized crawler with start URL: %s and allowed domain: %s",
             start_url, domain
@@ -88,6 +89,9 @@ class SEOCrawler(scrapy.Spider):
             item['json_ld'] = "; ".join(
                 sel.xpath("//script[@type='application/ld+json']/text()").getall()
             ).strip() or "N/A"
+            item['broken_links'] = "; ".join(
+                self.broken_links.get(response.url, [])
+            ) or "N/A"
 
             yield item
 
@@ -117,10 +121,14 @@ class SEOCrawler(scrapy.Spider):
 
     def errback_handler(self, failure):
         """
-        Handles errors in requests.
+        Handles errors in requests and tracks broken links per page.
         """
         request = failure.request
         referrer = request.meta.get("referrer")
+        if referrer:
+            self.broken_links.setdefault(referrer, []).append(
+                f"{request.url} ({failure.value})"
+            )
         logger.error("Broken link from %s: %s (Error: %s)", referrer, request.url, failure.value)
 
     def closed(self, reason):

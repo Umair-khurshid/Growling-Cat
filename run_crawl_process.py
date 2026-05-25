@@ -32,8 +32,10 @@ def run_single_crawl(start_url, depth, delay, concurrency, js_rendering):
             "RETRY_TIMES": 8,
             "RETRY_HTTP_CODES": [522, 500, 502, 503, 504, 408],
             "ROBOTSTXT_OBEY": True,
-            "USER_AGENT": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "DOWNLOADER_MIDDLEWARES": {},
+            "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "DOWNLOADER_MIDDLEWARES": {
+                "middlewares.RotatingUserAgentMiddleware": 400,
+            },
             "EXTENSIONS": {
                 "extensions.ProgressExtension": 500,
             },
