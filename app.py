@@ -1,5 +1,7 @@
 """Streamlit web interface for controlling the Growling Cat SEO crawler."""
 
+from __future__ import annotations
+
 import json
 import os
 import sqlite3
