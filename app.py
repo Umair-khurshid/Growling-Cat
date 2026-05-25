@@ -522,14 +522,14 @@ def main() -> None:  # pylint: disable=too-many-locals,too-many-branches,too-man
 
         if os.path.exists("progress.json"):
             try:
-                data = json.loads(Path("progress.json").read_text())
+                data = json.loads(Path("progress.json").read_text(encoding="utf-8"))
                 items_scraped = data.get("items_scraped", 0)
             except (json.JSONDecodeError, OSError):
                 pass
 
         if os.path.exists("crawl_result.json"):
             try:
-                result_found = json.loads(Path("crawl_result.json").read_text())
+                result_found = json.loads(Path("crawl_result.json").read_text(encoding="utf-8"))
                 os.remove("crawl_result.json")
             except (json.JSONDecodeError, OSError):
                 pass
