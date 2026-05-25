@@ -1,10 +1,9 @@
 """
 End-to-end tests for the SEOCrawler spider.
 """
-# pylint: disable=wrong-import-position,redefined-outer-name
+# pylint: disable=redefined-outer-name
 import http.server
 import os
-import sys
 import threading
 from functools import partial
 
@@ -13,11 +12,9 @@ from scrapy import signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
-# Add the project root to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from crawler import SEOCrawler
 from items import PageItem
+
 
 @pytest.fixture(scope="session")
 def http_server():
@@ -50,7 +47,7 @@ def test_e2e_crawl(http_server):
     """
     scraped_items = []
 
-    def item_scraped_handler(item, _response, _spider):
+    def item_scraped_handler(item, response, spider):
         """Signal handler to capture scraped items."""
         scraped_items.append(item)
 

@@ -1,24 +1,15 @@
 """
 Tests for the SEOCrawler spider.
 """
-# pylint: disable=wrong-import-position,redefined-outer-name
+# pylint: disable=redefined-outer-name
 import os
-import sys
 
 import pytest
 from scrapy.http import HtmlResponse, Request
 
-# Add the project root to the Python path
-# This is necessary for the test runner to find the 'crawler' and 'items' modules
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from crawler import SEOCrawler
 from items import PageItem
 
-
-# Get the absolute path to the directory of the current script
-# This is to ensure that the test can find the sample.html file
-# regardless of where pytest is run from.
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
 @pytest.fixture
@@ -30,7 +21,7 @@ def spider():
 def sample_html_response():
     """Pytest fixture to create a Scrapy HtmlResponse from the sample HTML file."""
     sample_html_path = os.path.join(TEST_DIR, "sample.html")
-    with open(sample_html_path, "r", encoding="utf-8") as f:
+    with open(sample_html_path, encoding="utf-8") as f:
         html_content = f.read()
 
     # The URL is important for the spider to resolve relative links
@@ -90,7 +81,7 @@ def test_follow_internal_links(spider, sample_html_response):
 def sample_js_html_response():
     """Pytest fixture to create a Scrapy HtmlResponse from the JS sample HTML file."""
     sample_html_path = os.path.join(TEST_DIR, "sample_js.html")
-    with open(sample_html_path, "r", encoding="utf-8") as f:
+    with open(sample_html_path, encoding="utf-8") as f:
         html_content = f.read()
 
     request = Request(url="https://example.com/js")
@@ -128,7 +119,7 @@ def test_parse_js_rendered_content(mocker, sample_js_html_response):
                 container.appendChild(h2);
             });
         </script>
-    
+
     </body></html>"""
     mock_driver.page_source = final_html
 

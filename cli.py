@@ -1,12 +1,9 @@
-"""
-This module provides a command-line interface for running the crawler.
-"""
-import logging
-import os
-import subprocess
-import sys
+"""Command-line interface for running the crawler."""
 
-# Configure logging
+import logging
+
+from crawl_runner import run_crawler_subprocess
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -18,25 +15,22 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 
 
-def run_crawler(url, depth, delay, concurrency, js_rendering):
-    """
-    Spawns a new Python process to run crawl.py with custom parameters.
-    """
-    python_executable = sys.executable
-    script_path = os.path.join(os.path.dirname(__file__), "run_crawl_process.py")
+def run_crawler(
+    url: str, depth: int, delay: float, concurrency: int, js_rendering: bool
+) -> None:
+    """Run the crawler with the specified parameters.
 
-    args = [
-        python_executable,
-        script_path,
-        url,
-        str(depth),
-        str(delay),
-        str(concurrency),
-        "True" if js_rendering else "False",
-    ]
-
-    try:
-        subprocess.run(args, check=True)
+    Args:
+        url: The starting URL to crawl.
+        depth: Maximum crawl depth.
+        delay: Delay between requests in seconds.
+        concurrency: Number of concurrent requests.
+        js_rendering: Whether to enable JavaScript rendering.
+    """
+    success, message = run_crawler_subprocess(
+        url, depth, delay, concurrency, js_rendering
+    )
+    if success:
         logger.info("Crawler executed successfully for URL: %s", url)
-    except subprocess.CalledProcessError as error:
-        logger.error("Crawler process failed: %s", error)
+    else:
+        logger.error("Crawler process failed: %s", message)

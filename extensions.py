@@ -1,26 +1,23 @@
-"""
-This module contains Scrapy extensions.
-"""
+"""Scrapy extensions for progress tracking."""
+
 import json
+
 from scrapy import signals
+from scrapy.crawler import Crawler
+from scrapy.spiders import Spider
 
 
 class ProgressExtension:
-    """
-    Tracks how many requests have been scheduled vs. completed.
-    Writes progress info to 'progress.json' so Streamlit can display a real progress bar.
-    """
+    """Tracks scheduled vs completed requests and writes progress to a JSON file."""
 
-    def __init__(self):
-        self.total_requests = 0
-        self.completed_requests = 0
-        self.done = False
+    def __init__(self) -> None:
+        self.total_requests: int = 0
+        self.completed_requests: int = 0
+        self.done: bool = False
 
     @classmethod
-    def from_crawler(cls, crawler):
-        """
-        This method is used by Scrapy to create your extension.
-        """
+    def from_crawler(cls, crawler: Crawler) -> "ProgressExtension":
+        """Create extension instance and connect signals."""
         ext = cls()
         crawler.signals.connect(ext.spider_opened, signal=signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signal=signals.spider_closed)
@@ -29,48 +26,35 @@ class ProgressExtension:
         crawler.signals.connect(ext.request_dropped, signal=signals.request_dropped)
         return ext
 
-    def spider_opened(self, _spider):
-        """
-        Called when the spider is opened.
-        """
+    def spider_opened(self, _spider: Spider) -> None:
+        """Reset counters when the spider opens."""
         self.total_requests = 0
         self.completed_requests = 0
         self.done = False
         self.update_progress_file()
 
-    def spider_closed(self, _spider, _reason):
-        """
-        Called when the spider is closed.
-        """
+    def spider_closed(self, _spider: Spider, _reason: str) -> None:
+        """Mark crawl as done when the spider closes."""
         self.done = True
         self.update_progress_file()
 
-    def request_scheduled(self, _request, _spider):
-        """
-        Called when a request is scheduled.
-        """
+    def request_scheduled(self, _request: object, _spider: Spider) -> None:
+        """Increment total request count."""
         self.total_requests += 1
         self.update_progress_file()
 
-    def response_received(self, _response, _request, _spider):
-        """
-        Called when a response is received.
-        """
+    def response_received(self, _response: object, _request: object, _spider: Spider) -> None:
+        """Increment completed request count on response."""
         self.completed_requests += 1
         self.update_progress_file()
 
-    def request_dropped(self, _request, _spider):
-        """
-        If a request is dropped (e.g., filtered by dupefilter),
-        treat it as completed so the progress doesn't stall.
-        """
+    def request_dropped(self, _request: object, _spider: Spider) -> None:
+        """Treat dropped requests as completed to keep progress accurate."""
         self.completed_requests += 1
         self.update_progress_file()
 
-    def update_progress_file(self):
-        """
-        Write current progress to a JSON file so Streamlit can read it.
-        """
+    def update_progress_file(self) -> None:
+        """Write current progress to a JSON file so Streamlit can read it."""
         data = {
             "total": self.total_requests,
             "completed": self.completed_requests,

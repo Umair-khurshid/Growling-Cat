@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=64.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "growling-cat"
+version = "0.1.0"
+description = "SEO crawler - open source alternative to Screaming Frog"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+    "streamlit>=1.50.0",
+    "scrapy>=2.14.0",
+    "pandas>=3.0.0",
+    "selenium>=4.44.0",
+    "lxml>=6.0.0",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_missing_imports = true
+disallow_untyped_defs = false
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
