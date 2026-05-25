@@ -1,7 +1,10 @@
 """Streamlit web interface for controlling the Growling Cat SEO crawler."""
 
+import json
 import os
 import sqlite3
+import threading
+import time
 
 import pandas as pd
 import streamlit as st
@@ -9,11 +12,44 @@ import streamlit as st
 from crawl_runner import run_crawler_subprocess
 
 
+def inject_custom_css() -> None:
+    """Inject custom CSS for Fira Code font and data-dense dashboard styling."""
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+        html, body, [class*="css"] {
+            font-family: 'Fira Sans', 'Source Sans Pro', sans-serif;
+        }
+        code, pre, [data-testid="stMetricValue"] {
+            font-family: 'Fira Code', 'Courier New', monospace !important;
+        }
+        .stApp {
+            background-color: #F8FAFC;
+        }
+        .stButton button {
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+        .stButton button:hover {
+            opacity: 0.9;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def fix_url_scheme(url: str) -> str:
     """Ensure the URL has a proper scheme (http:// or https://)."""
     if not url:
         return ""
-    if not (url.startswith("http://") or url.startswith("https://")):
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    if "localhost" in url or "127.0.0.1" in url:
+        url = "http://" + url
+    else:
         url = "https://" + url
     return url
 
@@ -173,71 +209,189 @@ def display_faq() -> None:
             st.write(answer)
 
 
-def load_and_display_results() -> None:
-    """Load crawl results from the database and display them."""
+def load_and_display_results(
+    status_filter: list[str] | None = None,
+    search_url: str = "",
+) -> pd.DataFrame | None:
+    """Load crawl results from the database and display them.
+
+    Args:
+        status_filter: List of status code prefixes to filter by (e.g. ["2xx", "4xx"]).
+        search_url: Substring to filter URLs by.
+
+    Returns:
+        The filtered DataFrame, or None if no DB or error.
+    """
     db_file = "growling_cat.db"
-    if os.path.exists(db_file):
-        try:
-            conn = sqlite3.connect(db_file)
-            df = pd.read_sql_query("SELECT * FROM pages", conn)
-            conn.close()
-
-            if "title" in df.columns:
-                df["title_length"] = df["title"].apply(
-                    lambda x: len(x) if x != "N/A" else 0
-                )
-            if "meta_description" in df.columns:
-                df["meta_description_length"] = df["meta_description"].apply(
-                    lambda x: len(x) if x != "N/A" else 0
-                )
-
-            display_dashboard(df)
-
-            st.write("### Crawled Data:")
-            df["url"] = df["url"].apply(truncate_url)
-
-            required_cols = ["status_code", "title_length", "meta_description_length"]
-            if all(col in df.columns for col in required_cols):
-                st.dataframe(style_dataframe(df))
-            else:
-                st.dataframe(df)
-
-        except sqlite3.Error as e:
-            st.error(f"An error occurred while loading results: {e}")
-    else:
+    if not os.path.exists(db_file):
         st.error("No results database found. Please run a crawl first.")
+        return None
+
+    try:
+        conn = sqlite3.connect(db_file)
+        df = pd.read_sql_query("SELECT * FROM pages", conn)
+        conn.close()
+    except sqlite3.Error as e:
+        st.error(f"An error occurred while loading results: {e}")
+        return None
+
+    if df.empty:
+        st.info("The database is empty. The crawl found no pages to analyze.")
+        display_dashboard(df)
+        st.write("### Crawled Data:")
+        st.write("*No data to display.*")
+        return None
+
+    if "title" in df.columns:
+        df["title_length"] = df["title"].apply(lambda x: len(x) if x != "N/A" else 0)
+    if "meta_description" in df.columns:
+        df["meta_description_length"] = df["meta_description"].apply(
+            lambda x: len(x) if x != "N/A" else 0
+        )
+
+    if search_url:
+        df = df[df["url"].str.contains(search_url, case=False, na=False)]
+    if status_filter and "All" not in status_filter:
+        valid_prefixes = {s[0] for s in status_filter if len(s) == 3 and s.endswith("xx")}
+        prefix_series = df["status_code"].notna() & df["status_code"].astype(str).str[0].isin(
+            valid_prefixes
+        )
+        df = df[prefix_series]
+
+    if df.empty:
+        st.info("No results match the current filters.")
+        return None
+
+    display_dashboard(df)
+
+    st.write("### Crawled Data:")
+    df["url"] = df["url"].apply(truncate_url)
+
+    required_cols = ["status_code", "title_length", "meta_description_length"]
+    display_df = df.drop(columns=["status_prefix"], errors="ignore")
+    if all(col in display_df.columns for col in required_cols):
+        st.dataframe(style_dataframe(display_df))
+    else:
+        st.dataframe(display_df)
+
+    return df
 
 
 def main() -> None:
     """Main function to run the Streamlit web interface."""
     st.set_page_config(page_title="Growling Cat", layout="wide")
+    inject_custom_css()
     st.title("Growling Cat")
 
+    if "auto_show" not in st.session_state:
+        st.session_state.auto_show = False
+
+    # --- Sidebar: advanced settings + filters + export ---
+    with st.sidebar:
+        st.markdown("*Adjust crawl behavior below.*")
+        with st.expander("Advanced Settings"):
+            depth = st.slider("Crawl Depth (DEPTH_LIMIT):", 1, 5, 2)
+            delay = st.slider("Download Delay (seconds):", 0.0, 5.0, 0.5, 0.1)
+            concurrency = st.slider("Concurrent Requests:", 1, 16, 8)
+            js_rendering = st.checkbox("Enable JavaScript Rendering", False)
+
+        st.markdown("---")
+        st.markdown("### Filters")
+        status_filter = st.multiselect(
+            "Status Code:",
+            options=["All", "2xx", "3xx", "4xx", "5xx"],
+            default=["All"],
+            placeholder="Filter by status...",
+        )
+        search_url = st.text_input("Search URL:", placeholder="Filter by URL...")
+
+        st.markdown("---")
+        st.markdown("### Export")
+        if st.session_state.get("csv_data") is not None:
+            st.download_button(
+                label="Download CSV",
+                data=st.session_state.csv_data,
+                file_name="growling_cat_results.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
+    # --- Main area: URL input + crawl/load buttons ---
     url = st.text_input("Website URL:", "https://quotes.toscrape.com/")
 
-    with st.expander("Advanced Settings"):
-        depth = st.slider("Crawl Depth (DEPTH_LIMIT):", 1, 5, 2)
-        delay = st.slider("Download Delay (seconds):", 0.0, 5.0, 0.5, 0.1)
-        concurrency = st.slider("Concurrent Requests:", 1, 16, 8)
-        js_rendering = st.checkbox("Enable JavaScript Rendering", False)
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        start_clicked = st.button("Start Crawling", use_container_width=True)
+    with col2:
+        load_clicked = st.button("Load Results", use_container_width=True)
 
-    if st.button("Start Crawling"):
+    # --- Progress area (placeholder cleared on each rerun) ---
+    progress_area = st.empty()
+
+    # --- Crawl handler ---
+    if start_clicked:
         cleaned_url = fix_url_scheme(url.strip())
         if cleaned_url:
-            with st.spinner(f"Crawling {cleaned_url}... This may take a while."):
-                success, message = start_crawl_process(
-                    cleaned_url, depth, delay, concurrency, js_rendering
-                )
-            if success:
-                st.success("Crawl complete! Click 'Load Results' to see the data.")
+            st.session_state.auto_show = False
+
+            with progress_area.container():
+                bar = st.progress(0)
+                status = st.empty()
+
+                crawl_result: dict[str, bool | str] = {"success": False, "message": ""}
+
+                def do_crawl() -> None:
+                    s, m = start_crawl_process(
+                        cleaned_url, depth, delay, concurrency, js_rendering
+                    )
+                    crawl_result["success"] = s
+                    crawl_result["message"] = m
+
+                thread = threading.Thread(target=do_crawl, daemon=True)
+                thread.start()
+
+                while thread.is_alive():
+                    if os.path.exists("progress.json"):
+                        try:
+                            with open("progress.json", encoding="utf-8") as f:
+                                data = json.load(f)
+                            total = data.get("total", 0)
+                            completed = data.get("completed", 0)
+                            if total > 0:
+                                pct = min(completed / total, 1.0)
+                                bar.progress(pct)
+                                status.text(f"Crawled {completed} of {total} pages...")
+                        except (json.JSONDecodeError, OSError):
+                            pass
+                    time.sleep(1)
+
+                thread.join()
+                bar.progress(1.0)
+                status.text("")
+
+            if crawl_result["success"]:
+                st.success("Crawl complete!")
+                st.session_state.auto_show = True
             else:
                 st.error("Crawl failed!")
-                st.text_area("Error Log:", message, height=300)
+                msg = str(crawl_result["message"])
+                st.text_area("Error Log:", msg, height=300)
         else:
             st.warning("Please enter a valid URL.")
 
-    if st.button("Load Results"):
-        load_and_display_results()
+    # --- Load and display results ---
+    should_show = load_clicked or st.session_state.pop("auto_show", False)
+    if should_show:
+        df = load_and_display_results(
+            status_filter=status_filter if status_filter else ["All"],
+            search_url=search_url if search_url else "",
+        )
+        if df is not None and not df.empty:
+            st.session_state.csv_data = df.to_csv(index=False).encode("utf-8")
+        else:
+            st.session_state.csv_data = None
+            if "csv_data" in st.session_state:
+                del st.session_state.csv_data
 
     display_faq()
 
