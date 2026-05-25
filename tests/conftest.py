@@ -82,11 +82,12 @@ def streamlit_base_url() -> Iterator[str]:
         "--global.developmentMode=false",
     ]
 
+    log_file = os.path.join(PROJECT_ROOT, "streamlit_test.log")
     proc = subprocess.Popen(
         cmd,
         cwd=PROJECT_ROOT,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=open(log_file, "a"),
+        stderr=open(log_file, "a"),
     )
 
     base_url = f"http://localhost:{port}"

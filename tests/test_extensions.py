@@ -24,12 +24,14 @@ def test_initial_state(extension: ProgressExtension) -> None:
 def test_spider_opened_resets_state(extension: ProgressExtension) -> None:
     extension.total_requests = 10
     extension.completed_requests = 5
+    extension.items_scraped = 7
     extension.done = True
 
     extension.spider_opened(MagicMock())
 
     assert extension.total_requests == 0
     assert extension.completed_requests == 0
+    assert extension.items_scraped == 0
     assert extension.done is False
 
 
@@ -70,6 +72,7 @@ def test_update_progress_file_writes_json(extension: ProgressExtension) -> None:
 
     assert data["total"] == 10
     assert data["completed"] == 3
+    assert data["items_scraped"] == 0
     assert data["done"] is False
 
     os.remove("progress.json")
@@ -80,4 +83,4 @@ def test_from_crawler_connects_signals() -> None:
     ext = ProgressExtension.from_crawler(crawler)
 
     assert isinstance(ext, ProgressExtension)
-    assert crawler.signals.connect.call_count == 5
+    assert crawler.signals.connect.call_count == 6

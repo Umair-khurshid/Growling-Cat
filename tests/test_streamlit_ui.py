@@ -169,6 +169,7 @@ class TestGrowlingCatUI:
             "URL value should persist after UI interactions"
         )
 
+    @pytest.mark.slow
     def test_crawl_failure_shows_error_log(self, app_page: Page) -> None:
         """Crawling a non-existent domain should complete and show a status."""
         app = StreamlitApp(app_page)

@@ -5,6 +5,7 @@ import os
 import sqlite3
 import threading
 import time
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -13,28 +14,48 @@ from crawl_runner import run_crawler_subprocess
 
 
 def inject_custom_css() -> None:
-    """Inject custom CSS for Fira Code font and data-dense dashboard styling."""
-    st.markdown(
+    """Inject custom CSS for Fira Code font, data-dense dashboard and dark mode."""
+    dark_css = ""
+    if st.session_state.get("dark_mode", False):
+        dark_css = """
+        .stApp { background-color: #0E1117 !important; }
+        .main .block-container { background-color: #0E1117; }
+        .stSidebar { background-color: #1E1E1E; }
+        .stSidebar .stMarkdown, .stSidebar label { color: #FAFAFA; }
+        [data-testid="stMetricValue"] { color: #58A6FF; }
+        [data-testid="stMetricLabel"] { color: #8B949E; }
+        .st-emotion-cache-1avcm0f { color: #C9D1D9; }
+        h1, h2, h3, h4, h5, h6 { color: #F0F6FC; }
+        .stTextInput label, .stSlider label, .stCheckbox label { color: #C9D1D9; }
+        .stExpander { border-color: #30363D; }
+        .st-bb { border-color: #30363D; }
+        .stAlert { background-color: #21262D; }
         """
+    st.markdown(
+        f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
-        html, body, [class*="css"] {
+        html, body, [class*="css"] {{
             font-family: 'Fira Sans', 'Source Sans Pro', sans-serif;
-        }
-        code, pre, [data-testid="stMetricValue"] {
+        }}
+        code, pre, [data-testid="stMetricValue"] {{
             font-family: 'Fira Code', 'Courier New', monospace !important;
-        }
-        .stApp {
+        }}
+        .stApp {{
             background-color: #F8FAFC;
-        }
-        .stButton button {
+        }}
+        .stButton button {{
             border-radius: 6px;
             font-weight: 500;
             transition: all 0.15s ease;
-        }
-        .stButton button:hover {
+        }}
+        .stButton button:hover {{
             opacity: 0.9;
-        }
+        }}
+        [data-testid="stMetricValue"] {{
+            font-size: 1.8rem;
+        }}
+        {dark_css}
         </style>
         """,
         unsafe_allow_html=True,
@@ -74,6 +95,8 @@ def start_crawl_process(
         os.remove(db_file)
     if os.path.exists(f"{db_file}-journal"):
         os.remove(f"{db_file}-journal")
+    if os.path.exists("progress.json"):
+        os.remove("progress.json")
 
     return run_crawler_subprocess(cleaned_url, depth, delay, concurrency, js_rendering)
 
@@ -109,6 +132,11 @@ def style_dataframe(df: pd.DataFrame) -> pd.io.formats.style.Styler:
             return "background-color: #F0E68C; color: black"
         return "background-color: #CD5C5C; color: white"
 
+    def style_broken_links(val: object) -> str:
+        if isinstance(val, str) and val != "N/A":
+            return "background-color: #FFD700; color: black; font-weight: bold"
+        return ""
+
     styler = (
         df.style.map(style_status_code, subset=["status_code"])
         .map(
@@ -119,6 +147,7 @@ def style_dataframe(df: pd.DataFrame) -> pd.io.formats.style.Styler:
             lambda x: style_length(x, optimal_desc_min, optimal_desc_max, desc_warn_range),
             subset=["meta_description_length"],
         )
+        .map(style_broken_links, subset=["broken_links"])
     )
     return styler
 
@@ -143,6 +172,12 @@ def display_dashboard(df: pd.DataFrame) -> None:
     col2.metric("Pages with Missing Titles", missing_titles)
     col3.metric("Pages with Missing Descriptions", missing_descriptions)
     col4.metric("Pages with Broken Links", pages_with_broken_links)
+
+    if pages_with_broken_links > 0:
+        st.warning(
+            f"⚠️ Found {pages_with_broken_links} page(s) with broken or missing links. "
+            "Check the **broken_links** column in the data table for details."
+        )
 
 
 def display_faq() -> None:
@@ -270,9 +305,9 @@ def load_and_display_results(
     required_cols = ["status_code", "title_length", "meta_description_length"]
     display_df = df.drop(columns=["status_prefix"], errors="ignore")
     if all(col in display_df.columns for col in required_cols):
-        st.dataframe(style_dataframe(display_df))
+        st.dataframe(style_dataframe(display_df), use_container_width=True)
     else:
-        st.dataframe(display_df)
+        st.dataframe(display_df, use_container_width=True)
 
     return df
 
@@ -280,15 +315,26 @@ def load_and_display_results(
 def main() -> None:
     """Main function to run the Streamlit web interface."""
     st.set_page_config(page_title="Growling Cat", layout="wide")
+
+    if "crawling" not in st.session_state:
+        st.session_state.crawling = False
+    if "auto_show" not in st.session_state:
+        st.session_state.auto_show = False
+    if "dark_mode" not in st.session_state:
+        st.session_state.dark_mode = False
+
     inject_custom_css()
     st.title("Growling Cat")
 
-    if "auto_show" not in st.session_state:
-        st.session_state.auto_show = False
-
-    # --- Sidebar: advanced settings + filters + export ---
+    # --- Sidebar: advanced settings + filters + dark mode + export ---
     with st.sidebar:
         st.markdown("*Adjust crawl behavior below.*")
+
+        dark_mode = st.toggle("Dark Mode", value=st.session_state.dark_mode)
+        if dark_mode != st.session_state.dark_mode:
+            st.session_state.dark_mode = dark_mode
+            st.rerun()
+
         with st.expander("Advanced Settings"):
             depth = st.slider("Crawl Depth (DEPTH_LIMIT):", 1, 5, 2)
             delay = st.slider("Download Delay (seconds):", 0.0, 5.0, 0.5, 0.1)
@@ -321,67 +367,91 @@ def main() -> None:
 
     col1, col2 = st.columns([1, 1])
     with col1:
-        start_clicked = st.button("Start Crawling", use_container_width=True)
+        start_clicked = st.button(
+            "Start Crawling", use_container_width=True, disabled=st.session_state.crawling
+        )
     with col2:
         load_clicked = st.button("Load Results", use_container_width=True)
 
-    # --- Progress area (placeholder cleared on each rerun) ---
-    progress_area = st.empty()
+    # --- Progress area ---
+    progress_place = st.empty()
 
-    # --- Crawl handler ---
-    if start_clicked:
+    # On each render, remove stale crawl_result.json from a prior run
+    if not st.session_state.get("crawling", False):
+        for stale in ("crawl_result.json", "progress.json"):
+            if os.path.exists(stale):
+                try:
+                    os.remove(stale)
+                except OSError:
+                    pass
+
+    # --- Crawl handler (non-blocking) ---
+    if start_clicked and not st.session_state.crawling:
         cleaned_url = fix_url_scheme(url.strip())
         if cleaned_url:
+            st.session_state.crawling = True
             st.session_state.auto_show = False
+            st.session_state.crawl_result = None
 
-            with progress_area.container():
-                bar = st.progress(0)
-                status = st.empty()
+            db_file = "growling_cat.db"
+            for f in (db_file, f"{db_file}-journal", "progress.json"):
+                if os.path.exists(f):
+                    os.remove(f)
 
-                crawl_result: dict[str, bool | str] = {"success": False, "message": ""}
+            def do_crawl() -> None:
+                s, msg = start_crawl_process(
+                    cleaned_url, depth, delay, concurrency, js_rendering
+                )
+                with open("crawl_result.json", "w", encoding="utf-8") as f:
+                    json.dump({"success": s, "message": msg}, f)
 
-                def do_crawl() -> None:
-                    s, m = start_crawl_process(
-                        cleaned_url, depth, delay, concurrency, js_rendering
-                    )
-                    crawl_result["success"] = s
-                    crawl_result["message"] = m
-
-                thread = threading.Thread(target=do_crawl, daemon=True)
-                thread.start()
-
-                while thread.is_alive():
-                    if os.path.exists("progress.json"):
-                        try:
-                            with open("progress.json", encoding="utf-8") as f:
-                                data = json.load(f)
-                            total = data.get("total", 0)
-                            completed = data.get("completed", 0)
-                            if total > 0:
-                                pct = min(completed / total, 1.0)
-                                bar.progress(pct)
-                                status.text(f"Crawled {completed} of {total} pages...")
-                        except (json.JSONDecodeError, OSError):
-                            pass
-                    time.sleep(1)
-
-                thread.join()
-                bar.progress(1.0)
-                status.text("")
-
-            if crawl_result["success"]:
-                st.success("Crawl complete!")
-                st.session_state.auto_show = True
-            else:
-                st.error("Crawl failed!")
-                msg = str(crawl_result["message"])
-                st.text_area("Error Log:", msg, height=300)
+            threading.Thread(target=do_crawl, daemon=True).start()
         else:
             st.warning("Please enter a valid URL.")
 
+    # --- Show progress / result ---
+    if st.session_state.crawling:
+        result_found = None
+        items_scraped = 0
+
+        if os.path.exists("progress.json"):
+            try:
+                data = json.loads(Path("progress.json").read_text())
+                items_scraped = data.get("items_scraped", 0)
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        if os.path.exists("crawl_result.json"):
+            try:
+                result_found = json.loads(Path("crawl_result.json").read_text())
+                os.remove("crawl_result.json")
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        if result_found is not None:
+            st.session_state.crawl_result = result_found
+            st.session_state.crawl_items_scraped = items_scraped
+            st.session_state.crawling = False
+        else:
+            with progress_place.container():
+                st.text(f"Pages scraped so far: {items_scraped}")
+            time.sleep(1)
+            st.rerun()
+
+    # Render result (persists after crawling stops)
+    result = st.session_state.get("crawl_result")
+    if result is not None:
+        items_scraped = st.session_state.get("crawl_items_scraped", 0)
+        if result.get("success", True):
+            st.success(f"Crawl complete! Scraped {items_scraped} page(s).")
+            st.session_state.auto_show = True
+        else:
+            st.error("Crawl failed!")
+            st.text_area("Error Log:", result.get("message", ""), height=300)
+
     # --- Load and display results ---
     should_show = load_clicked or st.session_state.pop("auto_show", False)
-    if should_show:
+    if should_show and not st.session_state.crawling:
         df = load_and_display_results(
             status_filter=status_filter if status_filter else ["All"],
             search_url=search_url if search_url else "",

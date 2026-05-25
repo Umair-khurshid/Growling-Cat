@@ -13,6 +13,7 @@ class ProgressExtension:
     def __init__(self) -> None:
         self.total_requests: int = 0
         self.completed_requests: int = 0
+        self.items_scraped: int = 0
         self.done: bool = False
 
     @classmethod
@@ -24,12 +25,14 @@ class ProgressExtension:
         crawler.signals.connect(ext.request_scheduled, signal=signals.request_scheduled)
         crawler.signals.connect(ext.response_received, signal=signals.response_received)
         crawler.signals.connect(ext.request_dropped, signal=signals.request_dropped)
+        crawler.signals.connect(ext._on_item_scraped, signal=signals.item_scraped)
         return ext
 
     def spider_opened(self, spider: Spider) -> None:  # noqa: ARG002
         """Reset counters when the spider opens."""
         self.total_requests = 0
         self.completed_requests = 0
+        self.items_scraped = 0
         self.done = False
         self.update_progress_file()
 
@@ -41,6 +44,11 @@ class ProgressExtension:
     def request_scheduled(self, request: object, spider: Spider) -> None:  # noqa: ARG002
         """Increment total request count."""
         self.total_requests += 1
+        self.update_progress_file()
+
+    def _on_item_scraped(self, item: object, response: object, spider: Spider) -> None:  # noqa: ARG002
+        """Increment items_scraped count when a PageItem is successfully processed."""
+        self.items_scraped += 1
         self.update_progress_file()
 
     def response_received(
@@ -60,6 +68,7 @@ class ProgressExtension:
         data = {
             "total": self.total_requests,
             "completed": self.completed_requests,
+            "items_scraped": self.items_scraped,
             "done": self.done,
         }
         with open("progress.json", "w", encoding="utf-8") as f:
