@@ -3,7 +3,7 @@ scrapy==2.16.0
 pandas>=3.0.3,<4.0.0
 selenium==4.45.0
 lxml==6.1.1
-tqdm==4.68.2
+tqdm==4.68.3
 requests==2.34.2
 urllib3>=2.7.0
 
