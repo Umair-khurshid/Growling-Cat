@@ -1,7 +1,7 @@
 streamlit==1.62.0
 scrapy==2.17.0
 pandas>=3.0.3,<4.0.0
-selenium==4.46.0
+selenium==4.48.0
 lxml==6.1.1
 tqdm==4.70.0
 requests==2.34.2
