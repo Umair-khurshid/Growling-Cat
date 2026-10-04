@@ -5,5 +5,5 @@ selenium==4.46.0
 lxml==6.1.1
 tqdm==4.70.0
 requests==2.34.2
-urllib3>=2.7.0
+urllib3>=2.8.0
 
