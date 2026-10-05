@@ -1,4 +1,4 @@
-streamlit==1.62.0
+streamlit==1.64.0
 scrapy==2.19.0
 pandas>=3.0.3,<4.0.0
 selenium==4.49.0
